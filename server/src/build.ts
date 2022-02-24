@@ -1,9 +1,8 @@
 import { EyesSender } from "./models/eyes";
-import { SendEyesSettingsProviderImpl } from "./adapters/settings";
 import { RandomSourceImpl } from "./adapters/random";
 import { TypingEventProviderImpl } from "./adapters/typing";
 import { DiscordClient } from "./adapters/client";
-import * as dotenv from "dotenv";
+import { EnvironmentLoader } from "./environment";
 
 export class ServerBuilder {
   private client: DiscordClient | undefined;
@@ -14,8 +13,7 @@ export class ServerBuilder {
     this.client = new DiscordClient();
     this.typingEvent = new TypingEventProviderImpl(this.client);
     const random = new RandomSourceImpl();
-    const settings = new SendEyesSettingsProviderImpl();
-    this.eyesSender = new EyesSender(this.typingEvent, random, settings);
+    this.eyesSender = new EyesSender(this.typingEvent, random);
   }
 
   public start(): void {
@@ -23,14 +21,18 @@ export class ServerBuilder {
       throw Error("Please invoke `build()` before `start()`.");
     }
 
-    dotenv.config();
-    const discordToken = process.env["DISCORD_TOKEN"];
-    if (discordToken === undefined) {
-      throw Error("Discord token is not set.");
-    }
+    const env = new EnvironmentLoader();
+    env.load();
+    this.eyesSender.settings = {
+      hitPercent: env.getFloatValue("EYES_HIT_PERCENT"),
+      requireSilenceTime: env.getFloatValue("EYES_REQUIRE_SILENCE_TIME"),
+      minStandByTime: env.getFloatValue("EYES_MIN_STAND_BY_TIME"),
+      maxStandByTime: env.getFloatValue("EYES_MAX_STAND_BY_TIME")
+    };
+    this.client.token = env.getValue("DISCORD_TOKEN");
 
     this.typingEvent.initialize();
     this.eyesSender.registerEvent();
-    void this.client.initialize(discordToken);
+    void this.client.login();
   }
 }

@@ -22,7 +22,7 @@ export class TypingEventProviderImpl implements TypingEventProvider {
   }
 
   private async triggerHandlers(raw: RawTyping): Promise<void> {
-    const typing = TypingEventProviderImpl.convertTyping(raw);
+    const typing = this.convertTyping(raw);
     await Promise.all(this.registrations.map((registration) => this.attemptTrigger(registration, raw, typing)));
   }
 
@@ -31,8 +31,8 @@ export class TypingEventProviderImpl implements TypingEventProvider {
     await handler(typing);
   }
 
-  private static convertTyping(raw: RawTyping): Typing {
-    return { channel: new ChannelImpl(raw.channel) };
+  private convertTyping(raw: RawTyping): Typing {
+    return { channel: new ChannelImpl(raw.channel, this.client) };
   }
 
   private isBotCheckPassed(raw: RawTyping, allowBot: boolean): boolean {
