@@ -7,8 +7,9 @@ export class ChannelImpl implements Channel {
 
   public async getLastMessageSentAt(): Promise<Date | undefined> {
     const channel = await this.client.fetchTextChannel(this.raw.id);
-    const lastMessage = channel.lastMessage;
-    if (lastMessage === null) return undefined;
+    const result = await channel.messages.fetch({ limit: 1 });
+    const lastMessage = result.first();
+    if (lastMessage === undefined) return undefined;
     return lastMessage.createdAt;
   }
 
