@@ -11,13 +11,9 @@ export class EyesSender {
   }
 
   public async attemptToSendEyes(typing: Typing): Promise<void> {
-    console.log(`[0] TYPING`);
     if (!this.isHit()) return;
-    console.log(`[1] HIT`);
     await this.standByRandomTime();
-    console.log(`[2] RANDOM`);
-    if (!(await this.isConditionOK(typing))) return;
-    console.log(`[3] SILENCE`);
+    if (!(await this.isSilenceEnough(typing))) return;
     await this.sendMessage(typing.channel);
   }
 
@@ -38,31 +34,19 @@ export class EyesSender {
     await sleepAsync(quietTime);
   }
 
-  private isConditionOK(typing: Typing): Promise<boolean> {
+  private async isSilenceEnough(typing: Typing): Promise<boolean> {
     if (this.settings === undefined) {
       throw Error("`settings` is undefined.");
     }
 
-    return new ChannelConditionChecker(typing.channel, this.settings).isConditionMatched();
+    const lastMessageSentAt = await typing.channel.getLastMessageSentAt();
+    if (lastMessageSentAt === undefined) return true;
+    const silenceTime = Date.now() - lastMessageSentAt.getTime();
+    return silenceTime >= this.settings.requireSilenceTime;
   }
 
   private async sendMessage(channel: Channel): Promise<void> {
     await channel.send(EyesSender.messageContent);
-  }
-}
-
-class ChannelConditionChecker {
-  public constructor(public readonly channel: Channel, public readonly settings: SendEyesSettingsProvider) {}
-
-  public isConditionMatched(): Promise<boolean> {
-    return this.isSilenceEnough();
-  }
-
-  private async isSilenceEnough(): Promise<boolean> {
-    const lastMessageSentAt = await this.channel.getLastMessageSentAt();
-    if (lastMessageSentAt === undefined) return true;
-    const silenceTime = lastMessageSentAt.getTime() - Date.now();
-    return silenceTime >= this.settings.requireSilenceTime;
   }
 }
 
