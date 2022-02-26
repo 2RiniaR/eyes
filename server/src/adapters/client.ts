@@ -1,4 +1,5 @@
-import { Client, Intents, TextBasedChannel, Typing as RawTyping } from "discord.js";
+import { Client, DiscordAPIError, Intents, TextBasedChannel, Typing as RawTyping } from "discord.js";
+import { DiscordError } from "../models/eyes";
 
 export class DiscordClient {
   public token: string | undefined;
@@ -28,7 +29,14 @@ export class DiscordClient {
   }
 
   public async fetchTextChannel(channelId: string): Promise<TextBasedChannel> {
-    const channel = await this.raw.channels.fetch(channelId);
+    let channel;
+    try {
+      channel = await this.raw.channels.fetch(channelId);
+    } catch (error) {
+      if (error instanceof DiscordAPIError) throw new DiscordError();
+      throw error;
+    }
+
     if (channel === null || !channel.isText()) {
       throw Error(`The channel id=${channelId} is not text channel or not exist.`);
     }

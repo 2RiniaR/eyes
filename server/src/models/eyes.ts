@@ -11,10 +11,15 @@ export class EyesSender {
   }
 
   public async attemptToSendEyes(typing: Typing): Promise<void> {
-    if (!this.isHit()) return;
-    await this.standByRandomTime();
-    if (!(await this.isSilenceEnough(typing))) return;
-    await this.sendMessage(typing.channel);
+    try {
+      if (!this.isHit()) return;
+      await this.standByRandomTime();
+      if (!(await this.isSilenceEnough(typing))) return;
+      await this.sendMessage(typing.channel);
+    } catch (error) {
+      if (error instanceof DiscordError) return;
+      console.error(error);
+    }
   }
 
   private isHit(): boolean {
@@ -49,6 +54,8 @@ export class EyesSender {
     await channel.send(EyesSender.messageContent);
   }
 }
+
+export class DiscordError {}
 
 export type TypingEventHandler = (typing: Typing) => PromiseLike<void>;
 export type TypingEventOptions = {

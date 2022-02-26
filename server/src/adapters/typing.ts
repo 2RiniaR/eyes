@@ -22,8 +22,12 @@ export class TypingEventProviderImpl implements TypingEventProvider {
   }
 
   private async triggerHandlers(raw: RawTyping): Promise<void> {
-    const typing = this.convertTyping(raw);
-    await Promise.all(this.registrations.map((registration) => this.attemptTrigger(registration, raw, typing)));
+    try {
+      const typing = this.convertTyping(raw);
+      await Promise.all(this.registrations.map((registration) => this.attemptTrigger(registration, raw, typing)));
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   private async attemptTrigger({ handler, options }: Registration, raw: RawTyping, typing: Typing) {
