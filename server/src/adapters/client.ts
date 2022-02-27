@@ -1,5 +1,6 @@
 import { Client, DiscordAPIError, Intents, TextBasedChannel, Typing as RawTyping } from "discord.js";
 import { DiscordError } from "../models/eyes";
+import { Logger } from "../models/logger";
 
 export class DiscordClient {
   public token: string | undefined;
@@ -9,10 +10,12 @@ export class DiscordClient {
     intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_TYPING]
   });
 
-  public constructor() {
+  public constructor(public readonly logger: Logger) {}
+
+  public initialize(): void {
     this.raw.on("ready", () => {
       if (this.raw.user === null) return;
-      console.log(`Logged in as ${this.raw.user.tag}!`);
+      this.logger.debug(`Logged in as ${this.raw.user.tag}!`);
     });
   }
 
