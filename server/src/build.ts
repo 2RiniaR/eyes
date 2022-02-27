@@ -3,6 +3,7 @@ import { RandomSourceImpl } from "./adapters/random";
 import { TypingEventProviderImpl } from "./adapters/typing";
 import { DiscordClient } from "./adapters/client";
 import { EnvironmentLoader } from "./environment";
+import { ConsoleLogger } from "./adapters/logger";
 
 export class ServerBuilder {
   private client: DiscordClient | undefined;
@@ -10,10 +11,11 @@ export class ServerBuilder {
   private eyesSender: EyesSender | undefined;
 
   public build(): void {
-    this.client = new DiscordClient();
-    this.typingEvent = new TypingEventProviderImpl(this.client);
+    const logger = new ConsoleLogger();
     const random = new RandomSourceImpl();
-    this.eyesSender = new EyesSender(this.typingEvent, random);
+    this.client = new DiscordClient(logger);
+    this.typingEvent = new TypingEventProviderImpl(this.client);
+    this.eyesSender = new EyesSender(this.typingEvent, random, logger);
   }
 
   public start(): void {
@@ -31,8 +33,9 @@ export class ServerBuilder {
     };
     this.client.token = env.getValue("DISCORD_TOKEN");
 
+    this.client.initialize();
     this.typingEvent.initialize();
-    this.eyesSender.registerEvent();
+    this.eyesSender.initialize();
     void this.client.login();
   }
 }
